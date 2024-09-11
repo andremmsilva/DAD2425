@@ -1,0 +1,9 @@
+/home/andre/ist/meic/padi/DAD2425/server/src/main/java/dadkvs/server/DadkvsServerState.java
+/home/andre/ist/meic/padi/DAD2425/server/src/main/java/dadkvs/server/VersionedValue.java
+/home/andre/ist/meic/padi/DAD2425/server/src/main/java/dadkvs/server/DadkvsConsoleServiceImpl.java
+/home/andre/ist/meic/padi/DAD2425/server/src/main/java/dadkvs/server/DadkvsServer.java
+/home/andre/ist/meic/padi/DAD2425/server/src/main/java/dadkvs/server/DadkvsPaxosServiceImpl.java
+/home/andre/ist/meic/padi/DAD2425/server/src/main/java/dadkvs/server/KeyValueStore.java
+/home/andre/ist/meic/padi/DAD2425/server/src/main/java/dadkvs/server/TransactionRecord.java
+/home/andre/ist/meic/padi/DAD2425/server/src/main/java/dadkvs/server/DadkvsMainServiceImpl.java
+/home/andre/ist/meic/padi/DAD2425/server/src/main/java/dadkvs/server/MainLoop.java
