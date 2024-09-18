@@ -1,4 +1,5 @@
 # DAD2425
+
 Project course for DAD 2024-25
 
 This repository holds the base code required to implement the project. Students are free to improve on the following code.
@@ -18,8 +19,9 @@ To compile the project, students must run the command
 
 ## **WARNING - Compilation Environment**
 
-The project requires different `pom.xml` for the *contract* module depending on the CPU architecture/OS distribution. 
+The project requires different `pom.xml` for the _contract_ module depending on the CPU architecture/OS distribution.
 The project currently has two pre-pepared poms:
+
 - One for **ARM/M4 Mac-OS** based systems, named `arm-pom.xml`;
 - One for **Intel/Linux** based systems, named `intel-pom.xml`;
 
@@ -27,31 +29,33 @@ Before the first compilation, copy your required contract pom and rename it to `
 
 # Deployment
 
-Current implementation assumes that all modules run on the same physical machine and requires 5 active servers. 
+Current implementation assumes that all modules run on the same physical machine and requires 5 active servers.
 
 The project is composed of three main components:
+
 - Servers
 - Clients
 - ConsoleClient
 
-
 ## Servers
 
-The servers run the base implementation. They are executed running the following command in the *server* directory:
+The servers run the base implementation. They are executed running the following command in the _server_ directory:
 
 `mvn exec:java -Dexec.args="{port} {id}"`
 
 Where you must fill in the following arguments:
-- **{id}**: Sequential id of the server. Current implementation requires servers to be ID'ed starting from *0* to *N-1* servers.
-- **{port}**: Base port of all servers. **All servers should use the same port**. The Server binded port will be  **{port} + {id}**. 
+
+- **{id}**: Sequential id of the server. Current implementation requires servers to be ID'ed starting from _0_ to _N-1_ servers.
+- **{port}**: Base port of all servers. **All servers should use the same port**. The Server binded port will be **{port} + {id}**.
 
 ## Client
 
-A client that executes transactions. It is executed by running the following command in the *client* directory:
+A client that executes transactions. It is executed by running the following command in the _client_ directory:
 
 `mvn exec:java`
 
 The client module opens a terminal from where students may issue commands. The following commands are available:
+
 - `help` - Shows the full command list;
 - `read {read_key_1} ` - Reads a key (useful for debug);
 - `tx {read_key_1} {read_key_2} {write_key}` - Takes as input 3 keys and executes a transaction with 2 reads and 1 write respectively;
@@ -62,11 +66,12 @@ The client module opens a terminal from where students may issue commands. The f
 
 ## ConsoleClient
 
-The console client servers as a front-end to issue configuration settings to servers. It is executed by running the following command in the *consoleclient* directory:
+The console client servers as a front-end to issue configuration settings to servers. It is executed by running the following command in the _consoleclient_ directory:
 
 `mvn exec:java`
 
 The console client opens a terminal from where students may issue configuration changes to servers. The following commands are available:
+
 - `help` - Shows the full command list;
 - `leader on/off replica_id` - Instructs a replica to strat/stop acting as a Paxos leader;
 - `debug mode replica_id` - Activates debug on a given replica;
@@ -76,5 +81,6 @@ The console client opens a terminal from where students may issue configuration 
 ## Protobuffs and Utils
 
 To support these modules, the project has two additional directories:
-- *contract*, holding the required `.proto` files;
-- *util*, holding the general classes to collect RPC responses
+
+- _contract_, holding the required `.proto` files;
+- _util_, holding the general classes to collect RPC responses
