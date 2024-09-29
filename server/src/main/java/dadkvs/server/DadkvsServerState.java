@@ -20,5 +20,8 @@ public class DadkvsServerState {
         main_loop = new MainLoop(this);
         main_loop_worker = new Thread(main_loop);
         main_loop_worker.start();
+
+        // Initial config
+        configuration = 0;
     }
 }

@@ -55,4 +55,34 @@ public class DadkvsConsoleServiceImpl extends DadkvsConsoleServiceGrpc.DadkvsCon
 		responseObserver.onNext(response);
 		responseObserver.onCompleted();
 	}
+
+	@Override
+    public void reconfigure(DadkvsConsole.ReconfigureRequest request,
+                            StreamObserver<DadkvsConsole.ReconfigureReply> responseObserver) {
+        // for debug purposes
+        System.out.println(request);
+
+        // Assuming configuration is just an integer, update the server state
+        boolean response_value = true;
+        int new_configuration = request.getConfiguration();
+
+        if (new_configuration == this.server_state.configuration + 1) {
+            this.server_state.configuration = new_configuration;
+            System.out.println("Reconfiguring to configuration " + new_configuration);
+        } else {
+            // If the configuration is not the next in sequence, reject the request
+            System.out.println("Invalid configuration request: " + new_configuration);
+            response_value = false;
+        }
+
+        // Wake up the main loop after reconfiguration
+        this.server_state.main_loop.wakeup();
+
+        // Send the response back to the client
+        DadkvsConsole.ReconfigureReply response = DadkvsConsole.ReconfigureReply.newBuilder()
+                .setAck(response_value).build();
+
+        responseObserver.onNext(response);
+        responseObserver.onCompleted();
+    }
 }
