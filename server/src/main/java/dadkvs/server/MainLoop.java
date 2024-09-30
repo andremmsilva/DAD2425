@@ -21,27 +21,17 @@ public class MainLoop implements Runnable {
 		System.out.println("Main loop do work start");
 		this.has_work = false;
 		while (this.has_work == false) {
-			System.out.println("Main loop do work: waiting");
 			try {
 				wait();
 			} catch (InterruptedException e) {
 			}
 
 			while (!server_state.workToDo.isEmpty()) {
-				BufferableRequest br = server_state.workToDo.peek();
+				BufferableRequest<?> br = server_state.workToDo.peek();
 				if (br.sequenceNumber <= server_state.sequence_number) {
 					server_state.workToDo.poll();
 
-					boolean result = this.server_state.store.commit(br.record);
-
-					// for debug purposes
-					System.out.println("Result is ready for request with reqid " + br.reqId);
-
-					DadkvsMain.CommitReply response = DadkvsMain.CommitReply.newBuilder()
-							.setReqid(br.reqId).setAck(result).build();
-
-					br.responseObserver.onNext(response);
-					br.responseObserver.onCompleted();
+					br.process(server_state);
 					server_state.incrementSequenceNumber();
 				} else {
 					break;

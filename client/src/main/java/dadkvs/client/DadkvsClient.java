@@ -109,7 +109,7 @@ public class DadkvsClient {
 				read_responses, n_servers);
 		;
 
-		read_request.setReqid(reqid).setKey(key);
+		read_request.setReqid(reqid).setKey(key).setSequenceNumber(-1);
 		for (int i = 0; i < n_servers; i++) {
 			CollectorStreamObserver<DadkvsMain.ReadReply> read_observer = new CollectorStreamObserver<DadkvsMain.ReadReply>(
 					read_collector);

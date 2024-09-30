@@ -1,32 +1,26 @@
 package dadkvs.server;
 
-import dadkvs.DadkvsMain;
 import io.grpc.stub.StreamObserver;
 
-public class BufferableRequest implements Comparable<BufferableRequest> {
+public abstract class BufferableRequest<T> implements Comparable<BufferableRequest<?>> {
     int reqId;
     int sequenceNumber;
-    StreamObserver<DadkvsMain.CommitReply> responseObserver;
-    TransactionRecord record;
+    StreamObserver<T> responseObserver;
 
     public BufferableRequest(
             int reqId,
-            StreamObserver<DadkvsMain.CommitReply> responseObserver,
-            TransactionRecord record) {
+            StreamObserver<T> responseObserver) {
         this.reqId = reqId;
         this.sequenceNumber = -1;
-        this.record = record;
         this.responseObserver = responseObserver;
     }
 
     public BufferableRequest(
             int reqId,
-            StreamObserver<DadkvsMain.CommitReply> responseObserver,
-            TransactionRecord record,
+            StreamObserver<T> responseObserver,
             int sequence_number) {
         this.reqId = reqId;
         this.sequenceNumber = sequence_number;
-        this.record = record;
         this.responseObserver = responseObserver;
     }
 
@@ -35,8 +29,10 @@ public class BufferableRequest implements Comparable<BufferableRequest> {
     }
 
     @Override
-    public int compareTo(BufferableRequest o) {
+    public int compareTo(BufferableRequest<?> o) {
         // For the priority queue
         return this.sequenceNumber - o.sequenceNumber;
     }
+
+    public abstract void process(DadkvsServerState serverState);
 }

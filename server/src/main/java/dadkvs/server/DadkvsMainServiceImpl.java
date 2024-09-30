@@ -19,7 +19,29 @@ public class DadkvsMainServiceImpl extends DadkvsMainServiceGrpc.DadkvsMainServi
 		this.timestamp = 0;
 	}
 
-	private boolean broadcastToReplicas(DadkvsMain.CommitRequest request, int sequenceNumber) {
+	private void broadcastReadToReplicas(DadkvsMain.ReadRequest request, int sequenceNumber) {
+		final int responses_needed = server_state.n_servers - 1;
+		DadkvsMain.ReadRequest.Builder broadcastRequest = DadkvsMain.ReadRequest.newBuilder()
+				.setKey(request.getKey())
+				.setReqid(request.getReqid())
+				.setSequenceNumber(sequenceNumber);
+
+		ArrayList<DadkvsMain.ReadReply> broadcastResponses = new ArrayList<>();
+		GenericResponseCollector<DadkvsMain.ReadReply> broadcastCollector = new GenericResponseCollector<>(
+				broadcastResponses, server_state.n_servers);
+
+		System.out.println("Leader broadcasting " + request.getReqid() + " with sequence nr " + sequenceNumber);
+		for (int i = 0; i < server_state.n_servers; i++) {
+			if (i == server_state.my_id)
+				continue;
+			CollectorStreamObserver<DadkvsMain.ReadReply> broadcastObserver = new CollectorStreamObserver<>(
+					broadcastCollector);
+			server_state.async_stubs[i].read(broadcastRequest.build(), broadcastObserver);
+		}
+		broadcastCollector.waitForTarget(responses_needed);
+	}
+
+	private boolean broadcastCommitToReplicas(DadkvsMain.CommitRequest request, int sequenceNumber) {
 		final int responses_needed = server_state.n_servers - 1;
 		boolean result = false;
 
@@ -60,16 +82,59 @@ public class DadkvsMainServiceImpl extends DadkvsMainServiceGrpc.DadkvsMainServi
 	public void read(DadkvsMain.ReadRequest request, StreamObserver<DadkvsMain.ReadReply> responseObserver) {
 		// for debug purposes
 		System.out.println("Receiving read request:" + request);
-
 		int reqid = request.getReqid();
 		int key = request.getKey();
-		VersionedValue vv = this.server_state.store.read(key);
+		int req_seq_nr = request.getSequenceNumber();
 
-		DadkvsMain.ReadReply response = DadkvsMain.ReadReply.newBuilder()
-				.setReqid(reqid).setValue(vv.getValue()).setTimestamp(vv.getVersion()).build();
+		BufferableRequest br;
+		if (server_state.i_am_leader) {
+			br = new ReadBufferableRequest(
+					reqid,
+					responseObserver,
+					server_state.sequence_number,
+					key);
 
-		responseObserver.onNext(response);
-		responseObserver.onCompleted();
+			broadcastReadToReplicas(request, server_state.sequence_number);
+			server_state.workToDo.add(br);
+		} else {
+			if (req_seq_nr == -1) {
+				br = this.server_state.unsequencedRequests.remove(reqid);
+				if (br != null) { // server's request arrived before client's
+					br.responseObserver = responseObserver;
+					server_state.workToDo.add(br);
+					System.out.println("Non-leader received request from client. Already had sequence number.");
+					server_state.main_loop.wakeup();
+					return;
+				}
+
+				// let's wait until we have a sequence number
+				System.out.println("Non-leader received request from client. Buffering...");
+				br = new ReadBufferableRequest(reqid, responseObserver, key);
+				server_state.unsequencedRequests.put(reqid, br);
+				server_state.main_loop.wakeup();
+				return;
+			}
+
+			// Coming from the leader.
+			br = server_state.unsequencedRequests.get(reqid);
+			if (br == null) {
+				br = new ReadBufferableRequest(reqid, null, key);
+				br.setSequenceNumber(req_seq_nr);
+				server_state.unsequencedRequests.put(reqid, br);
+			} else {
+				br.setSequenceNumber(req_seq_nr);
+				server_state.workToDo.add(br);
+				server_state.unsequencedRequests.remove(reqid);
+			}
+
+			responseObserver.onNext(DadkvsMain.ReadReply.newBuilder()
+					.setReqid(reqid)
+					.setTimestamp(-1)
+					.build());
+			responseObserver.onCompleted();
+		}
+
+		server_state.main_loop.wakeup();
 	}
 
 	@Override
@@ -102,15 +167,14 @@ public class DadkvsMainServiceImpl extends DadkvsMainServiceGrpc.DadkvsMainServi
 		if (server_state.i_am_leader) {
 			System.out.println("Leader received request from client...");
 
-			br = new BufferableRequest(
+			br = new WriteBufferableRequest(
 					reqid,
 					responseObserver,
-					txrecord,
-					server_state.sequence_number);
+					server_state.sequence_number,
+					txrecord);
 
-			broadcastToReplicas(request, server_state.sequence_number);
+			broadcastCommitToReplicas(request, server_state.sequence_number);
 			server_state.workToDo.add(br);
-			System.out.println(server_state.workToDo);
 		} else {
 			if (req_seq_nr == -1) {
 				// Coming from the client
@@ -119,13 +183,15 @@ public class DadkvsMainServiceImpl extends DadkvsMainServiceGrpc.DadkvsMainServi
 					br.responseObserver = responseObserver;
 					server_state.workToDo.add(br);
 					System.out.println("Non-leader received request from client. Already had sequence number.");
+					server_state.main_loop.wakeup();
 					return;
 				}
 
 				// let's wait until we have a sequence number
 				System.out.println("Non-leader received request from client. Buffering...");
-				br = new BufferableRequest(reqid, responseObserver, txrecord);
+				br = new WriteBufferableRequest(reqid, responseObserver, txrecord);
 				server_state.unsequencedRequests.put(reqid, br);
+				server_state.main_loop.wakeup();
 				return;
 			}
 
@@ -133,7 +199,7 @@ public class DadkvsMainServiceImpl extends DadkvsMainServiceGrpc.DadkvsMainServi
 			System.out.println(server_state.unsequencedRequests);
 			br = server_state.unsequencedRequests.get(reqid);
 			if (br == null) {
-				br = new BufferableRequest(reqid, null, txrecord);
+				br = new WriteBufferableRequest(reqid, null, txrecord);
 				br.setSequenceNumber(req_seq_nr);
 				server_state.unsequencedRequests.put(reqid, br);
 			} else {
