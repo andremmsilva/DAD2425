@@ -1,5 +1,7 @@
 package dadkvs.server;
 
+import dadkvs.DadkvsMain;
+
 public class MainLoop implements Runnable {
 	DadkvsServerState server_state;
 
@@ -24,7 +26,22 @@ public class MainLoop implements Runnable {
 				wait();
 			} catch (InterruptedException e) {
 			}
+
+			while (!server_state.workToDo.isEmpty()) {
+				BufferableRequest br = server_state.workToDo.poll();
+				boolean result = this.server_state.store.commit(br.record);
+
+				// for debug purposes
+				System.out.println("Result is ready for request with reqid " + br.reqId);
+
+				DadkvsMain.CommitReply response = DadkvsMain.CommitReply.newBuilder()
+						.setReqid(br.reqId).setAck(result).build();
+
+				br.responseObserver.onNext(response);
+				br.responseObserver.onCompleted();
+			}
 		}
+
 		System.out.println("Main loop do work finish");
 	}
 

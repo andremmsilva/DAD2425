@@ -63,7 +63,8 @@ public class DadkvsClient {
 				.setKey2(key2)
 				.setVersion2(key2_version)
 				.setWritekey(write_key)
-				.setWriteval(write_value);
+				.setWriteval(write_value)
+				.setSequenceNumber(-1);
 
 		System.out.println("Reqid " + reqid);
 		System.out.println("Read1 key " + key1 + " with version " + key1_version);

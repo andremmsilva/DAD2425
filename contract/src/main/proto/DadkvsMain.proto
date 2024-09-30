@@ -23,6 +23,7 @@ message CommitRequest {
   int32 version2  = 5;
   int32 writekey  = 6;
   int32 writeval  = 7;
+  int32 sequenceNumber = 8;
 }
 
 message CommitReply {
