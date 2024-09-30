@@ -28,17 +28,24 @@ public class MainLoop implements Runnable {
 			}
 
 			while (!server_state.workToDo.isEmpty()) {
-				BufferableRequest br = server_state.workToDo.poll();
-				boolean result = this.server_state.store.commit(br.record);
+				BufferableRequest br = server_state.workToDo.peek();
+				if (br.sequenceNumber <= server_state.sequence_number) {
+					server_state.workToDo.poll();
 
-				// for debug purposes
-				System.out.println("Result is ready for request with reqid " + br.reqId);
+					boolean result = this.server_state.store.commit(br.record);
 
-				DadkvsMain.CommitReply response = DadkvsMain.CommitReply.newBuilder()
-						.setReqid(br.reqId).setAck(result).build();
+					// for debug purposes
+					System.out.println("Result is ready for request with reqid " + br.reqId);
 
-				br.responseObserver.onNext(response);
-				br.responseObserver.onCompleted();
+					DadkvsMain.CommitReply response = DadkvsMain.CommitReply.newBuilder()
+							.setReqid(br.reqId).setAck(result).build();
+
+					br.responseObserver.onNext(response);
+					br.responseObserver.onCompleted();
+					server_state.incrementSequenceNumber();
+				} else {
+					break;
+				}
 			}
 		}
 

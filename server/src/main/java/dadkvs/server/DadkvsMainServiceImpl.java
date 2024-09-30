@@ -20,7 +20,7 @@ public class DadkvsMainServiceImpl extends DadkvsMainServiceGrpc.DadkvsMainServi
 	}
 
 	private boolean broadcastToReplicas(DadkvsMain.CommitRequest request, int sequenceNumber) {
-		final int responses_needed = 1;
+		final int responses_needed = server_state.n_servers - 1;
 		boolean result = false;
 
 		DadkvsMain.CommitRequest.Builder broadcastRequest = DadkvsMain.CommitRequest.newBuilder()
@@ -52,7 +52,6 @@ public class DadkvsMainServiceImpl extends DadkvsMainServiceGrpc.DadkvsMainServi
 			DadkvsMain.CommitReply reply = replyIterator.next();
 			result = reply.getAck();
 		}
-		System.out.println("Alive");
 
 		return result;
 	}
@@ -103,7 +102,6 @@ public class DadkvsMainServiceImpl extends DadkvsMainServiceGrpc.DadkvsMainServi
 		if (server_state.i_am_leader) {
 			System.out.println("Leader received request from client...");
 
-			server_state.incrementSequenceNumber();
 			br = new BufferableRequest(
 					reqid,
 					responseObserver,
@@ -115,35 +113,40 @@ public class DadkvsMainServiceImpl extends DadkvsMainServiceGrpc.DadkvsMainServi
 			System.out.println(server_state.workToDo);
 		} else {
 			if (req_seq_nr == -1) {
-				// Coming from the client, let's wait until we have a sequence number
-				System.out.println("Non-leader received request from client. Buffering...");
+				// Coming from the client
+				br = server_state.unsequencedRequests.remove(reqid);
+				if (br != null) { // server's request arrived before client's
+					br.responseObserver = responseObserver;
+					server_state.workToDo.add(br);
+					System.out.println("Non-leader received request from client. Already had sequence number.");
+					return;
+				}
 
+				// let's wait until we have a sequence number
+				System.out.println("Non-leader received request from client. Buffering...");
 				br = new BufferableRequest(reqid, responseObserver, txrecord);
 				server_state.unsequencedRequests.put(reqid, br);
-				System.out.println(server_state.unsequencedRequests);
 				return;
 			}
 
 			// Coming from the leader.
 			System.out.println(server_state.unsequencedRequests);
-			server_state.setSequenceNumber(req_seq_nr);
 			br = server_state.unsequencedRequests.get(reqid);
 			if (br == null) {
-				System.out.println(
-						"Unexpected error - no match found in unsequenced requests for the request provided by the leader - "
-								+ reqid);
-				return;
+				br = new BufferableRequest(reqid, null, txrecord);
+				br.setSequenceNumber(req_seq_nr);
+				server_state.unsequencedRequests.put(reqid, br);
+			} else {
+				br.setSequenceNumber(req_seq_nr);
+				server_state.workToDo.add(br);
+				server_state.unsequencedRequests.remove(reqid);
 			}
 
-			br.setSequenceNumber(req_seq_nr);
-			server_state.unsequencedRequests.remove(reqid);
-			server_state.workToDo.add(br);
 			responseObserver.onNext(DadkvsMain.CommitReply.newBuilder()
 					.setAck(true)
 					.setReqid(reqid)
 					.build());
 			responseObserver.onCompleted();
-			System.out.println(server_state.workToDo);
 		}
 
 		server_state.main_loop.wakeup();
