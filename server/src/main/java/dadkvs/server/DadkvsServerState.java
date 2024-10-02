@@ -3,7 +3,8 @@ package dadkvs.server;
 import dadkvs.DadkvsMainServiceGrpc;
 import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
-import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.PriorityBlockingQueue;
 
 public class DadkvsServerState {
     final int n_servers = 5;
@@ -20,8 +21,8 @@ public class DadkvsServerState {
     MainLoop main_loop;
     Thread main_loop_worker;
 
-    Queue<BufferableRequest> workToDo = new PriorityQueue<>();
-    Map<Integer, BufferableRequest> unsequencedRequests = new HashMap<>();
+    PriorityBlockingQueue<BufferableRequest<?>> workToDo = new PriorityBlockingQueue<>();
+    ConcurrentHashMap<Integer, BufferableRequest<?>> unsequencedRequests = new ConcurrentHashMap<>();
 
     String[] targets;
     ManagedChannel[] channels;
@@ -86,6 +87,6 @@ public class DadkvsServerState {
             main_loop_worker.interrupt();
         }
 
-		System.exit(1);
-	}
+        System.exit(1);
+    }
 }

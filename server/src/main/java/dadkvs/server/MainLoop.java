@@ -31,6 +31,8 @@ public class MainLoop implements Runnable {
 				if (br.sequenceNumber <= server_state.sequence_number) {
 					server_state.workToDo.poll();
 
+					System.out.println("Main loop doing request " + br.reqId);
+
 					br.process(server_state);
 					server_state.incrementSequenceNumber();
 				} else {
