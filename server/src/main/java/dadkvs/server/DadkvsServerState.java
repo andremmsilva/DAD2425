@@ -9,6 +9,7 @@ public class DadkvsServerState {
     final int n_servers = 5;
     final String host = "localhost";
 
+    int configuration;
     boolean i_am_leader;
     int debug_mode;
     int base_port;
@@ -29,6 +30,7 @@ public class DadkvsServerState {
     public DadkvsServerState(int kv_size, int port, int myself) {
         base_port = port;
         my_id = myself;
+        configuration = 0; // Initial config.
         i_am_leader = false;
         debug_mode = 0;
         store_size = kv_size;
