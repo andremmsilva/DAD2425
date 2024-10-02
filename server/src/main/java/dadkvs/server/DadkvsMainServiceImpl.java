@@ -95,6 +95,12 @@ public class DadkvsMainServiceImpl extends DadkvsMainServiceGrpc.DadkvsMainServi
 			// 100 + [0, 900] -> Range: [100, 1000] ms
 			int delay = 100 + random.nextInt(901);
 
+            try {
+                Thread.sleep(delay);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+
 			System.out.println("Slow-mode on, delaying: " + delay + " ms");
 		}
 
@@ -180,6 +186,12 @@ public class DadkvsMainServiceImpl extends DadkvsMainServiceGrpc.DadkvsMainServi
 			Random random = new Random();
 			// 100 + [0, 900] -> Range: [100, 1000] ms
 			int delay = 100 + random.nextInt(901);
+
+            try {
+                Thread.sleep(delay);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
 
 			System.out.println("Slow-mode on, delaying: " + delay + " ms");
 		}
