@@ -8,6 +8,7 @@ import dadkvs.util.GenericResponseCollector;
 import io.grpc.stub.StreamObserver;
 import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.Random;
 
 public class DadkvsMainServiceImpl extends DadkvsMainServiceGrpc.DadkvsMainServiceImplBase {
 
@@ -82,7 +83,23 @@ public class DadkvsMainServiceImpl extends DadkvsMainServiceGrpc.DadkvsMainServi
 	public void read(DadkvsMain.ReadRequest request, StreamObserver<DadkvsMain.ReadReply> responseObserver) {
 		// for debug purposes
 		System.out.println("Receiving read request:" + request);
-		int reqid = request.getReqid();
+		
+        // Freeze case
+        if (this.server_state.debug_mode == 2) {
+			System.out.println("Server is frozen, ignoring response.");
+			return;
+        
+        // Slow mode one case
+		} else if (this.server_state.debug_mode == 4) {
+			Random random = new Random();
+			// 100 + [0, 900] -> Range: [100, 1000] ms
+			int delay = 100 + random.nextInt(901);
+
+			System.out.println("Slow-mode on, delaying: " + delay + " ms");
+		}
+
+        // Read
+        int reqid = request.getReqid();
 		int key = request.getKey();
 		int req_seq_nr = request.getSequenceNumber();
 
@@ -153,6 +170,21 @@ public class DadkvsMainServiceImpl extends DadkvsMainServiceGrpc.DadkvsMainServi
 		System.out.println("reqid " + reqid + " key1 " + key1 + " v1 " + version1 + " k2 " + key2 + " v2 " + version2
 				+ " wk " + writekey + " writeval " + writeval + " seq " + req_seq_nr);
 
+        // Freeze case
+        if (this.server_state.debug_mode == 2) {
+			System.out.println("Server is frozen, ignoring response.");
+			return;
+        
+        // Slow mode one case
+		} else if (this.server_state.debug_mode == 4) {
+			Random random = new Random();
+			// 100 + [0, 900] -> Range: [100, 1000] ms
+			int delay = 100 + random.nextInt(901);
+
+			System.out.println("Slow-mode on, delaying: " + delay + " ms");
+		}
+
+        // Committx
 		this.timestamp++;
 		TransactionRecord txrecord = new TransactionRecord(
 				key1,

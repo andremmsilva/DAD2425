@@ -20,11 +20,17 @@ message SetDebugReply {
   bool ack = 1;
 }
 
+// Reconfigure request and reply
+message ReconfigureRequest {
+  int32 configuration = 1;
+}
+
+message ReconfigureReply {
+  bool ack = 1;
+}
+
 service DadkvsConsoleService {
   rpc setleader (SetLeaderRequest) returns (SetLeaderReply);
   rpc setdebug (SetDebugRequest) returns (SetDebugReply);
+  rpc reconfigure (ReconfigureRequest) returns (ReconfigureReply);
 }
-
-
-
-

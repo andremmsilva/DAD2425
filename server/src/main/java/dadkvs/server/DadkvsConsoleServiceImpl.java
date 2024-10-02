@@ -42,9 +42,20 @@ public class DadkvsConsoleServiceImpl extends DadkvsConsoleServiceGrpc.DadkvsCon
 		System.out.println(request);
 
 		boolean response_value = true;
-
 		this.server_state.debug_mode = request.getMode();
-		this.server_state.main_loop.wakeup();
+
+		// If it's a crash debugmode
+		if(this.server_state.debug_mode == 1) {
+			server_state.crashServer();
+		}
+
+		// If it's to do an unfreeze or an slow-mode-off it will just go to normal (0)
+		else if(this.server_state.debug_mode == 3 || this.server_state.debug_mode == 5){
+			this.server_state.debug_mode = 0;
+			this.server_state.main_loop.wakeup();
+		} else {
+			this.server_state.main_loop.wakeup();
+		}
 
 		// for debug purposes
 		System.out.println("Setting debug mode to = " + this.server_state.debug_mode);
@@ -55,4 +66,33 @@ public class DadkvsConsoleServiceImpl extends DadkvsConsoleServiceGrpc.DadkvsCon
 		responseObserver.onNext(response);
 		responseObserver.onCompleted();
 	}
+
+    @Override
+    public void reconfigure(DadkvsConsole.ReconfigureRequest request,
+                            StreamObserver<DadkvsConsole.ReconfigureReply> responseObserver) {
+        // for debug purposes
+        System.out.println(request);
+
+        boolean response_value = true;
+        int new_configuration = request.getConfiguration();
+
+        if (new_configuration == this.server_state.configuration + 1) {
+            this.server_state.configuration = new_configuration;
+            System.out.println("Reconfiguring to configuration " + new_configuration);
+        } else {
+            // If the configuration is not the next in sequence, reject the request
+            System.out.println("Invalid configuration request: " + new_configuration);
+            response_value = false;
+        }
+
+        // Wake up the main loop after reconfiguration
+        this.server_state.main_loop.wakeup();
+
+        // Send the response back to the client
+        DadkvsConsole.ReconfigureReply response = DadkvsConsole.ReconfigureReply.newBuilder()
+                .setAck(response_value).build();
+
+        responseObserver.onNext(response);
+        responseObserver.onCompleted();
+    }
 }

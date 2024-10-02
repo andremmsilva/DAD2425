@@ -75,4 +75,15 @@ public class DadkvsServerState {
     public synchronized void setSequenceNumber(int sequence_number) {
         this.sequence_number = sequence_number;
     }
+
+    public synchronized void crashServer() {
+        System.out.println("Crashing the server...");
+
+        terminateComms();
+        if (main_loop_worker != null && main_loop_worker.isAlive()) {
+            main_loop_worker.interrupt();
+        }
+
+		System.exit(1);
+	}
 }
