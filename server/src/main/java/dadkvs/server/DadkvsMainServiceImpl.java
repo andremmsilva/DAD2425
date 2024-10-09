@@ -20,16 +20,14 @@ public class DadkvsMainServiceImpl extends DadkvsMainServiceGrpc.DadkvsMainServi
 	public void read(DadkvsMain.ReadRequest request, StreamObserver<DadkvsMain.ReadReply> responseObserver) {
 		// for debug purposes
 		System.out.println("Receiving read request:" + request);
-
 		int reqid = request.getReqid();
 		int key = request.getKey();
-		VersionedValue vv = this.server_state.store.read(key);
 
-		DadkvsMain.ReadReply response = DadkvsMain.ReadReply.newBuilder()
-				.setReqid(reqid).setValue(vv.getValue()).setTimestamp(vv.getVersion()).build();
+		System.out.println("reqid " + reqid + " key " + key);
 
-		responseObserver.onNext(response);
-		responseObserver.onCompleted();
+		// Put requests in a waiting pool
+		ReadRequest req = new ReadRequest(reqid, responseObserver, key);
+		server_state.pendingRequests.put(reqid, req);
 	}
 
 	@Override
@@ -49,18 +47,10 @@ public class DadkvsMainServiceImpl extends DadkvsMainServiceGrpc.DadkvsMainServi
 		System.out.println("reqid " + reqid + " key1 " + key1 + " v1 " + version1 + " k2 " + key2 + " v2 " + version2
 				+ " wk " + writekey + " writeval " + writeval);
 
+		// Put requests in a waiting pool
 		this.timestamp++;
-		TransactionRecord txrecord = new TransactionRecord(key1, version1, key2, version2, writekey, writeval,
+		WriteRequest req = new WriteRequest(reqid, responseObserver, key1, version1, key2, version2, writekey, writeval,
 				this.timestamp);
-		boolean result = this.server_state.store.commit(txrecord);
-
-		// for debug purposes
-		System.out.println("Result is ready for request with reqid " + reqid);
-
-		DadkvsMain.CommitReply response = DadkvsMain.CommitReply.newBuilder()
-				.setReqid(reqid).setAck(result).build();
-
-		responseObserver.onNext(response);
-		responseObserver.onCompleted();
+		server_state.pendingRequests.put(reqid, req);
 	}
 }
