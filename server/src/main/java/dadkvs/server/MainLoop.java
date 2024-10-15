@@ -28,7 +28,7 @@ public class MainLoop implements Runnable {
 					break;
 				}
 
-				GenericRequest<?> req = this.server_state.pendingRequests.get(o.acceptedReqId);
+				GenericRequest<?> req = this.server_state.pendingRequests.get(o.reqId);
 				if (req == null) {
 					break; // Don't execute yet, wait for client to send the request.
 				}

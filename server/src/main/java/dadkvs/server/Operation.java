@@ -1,22 +1,22 @@
 package dadkvs.server;
 
 public class Operation {
-    int promisedId;
-    int acceptedId;
-    int acceptedReqId;
+    int promisedNum;
+    int acceptedNum;
+    int reqId;
     boolean canExecute;
 
     public Operation() {
-        this.promisedId = 0;
-        this.acceptedId = 0;
-        this.acceptedReqId = -1;
+        this.promisedNum = 0;
+        this.acceptedNum = 0;
+        this.reqId = -1;
         this.canExecute = false;
     }
 
-    public Operation(int promisedId) {
-        this.promisedId = promisedId;
-        this.acceptedId = 0;
-        this.acceptedReqId = -1;
+    public Operation(int promisedNum) {
+        this.promisedNum = promisedNum;
+        this.acceptedNum = 0;
+        this.reqId = -1;
         this.canExecute = false;
     }
 }
