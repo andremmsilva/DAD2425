@@ -52,15 +52,9 @@ public class DadkvsMainServiceImpl extends DadkvsMainServiceGrpc.DadkvsMainServi
 		this.timestamp++;
 		TransactionRecord txrecord = new TransactionRecord(key1, version1, key2, version2, writekey, writeval,
 				this.timestamp);
-		boolean result = this.server_state.store.commit(txrecord);
 
-		// for debug purposes
-		System.out.println("Result is ready for request with reqid " + reqid);
-
-		DadkvsMain.CommitReply response = DadkvsMain.CommitReply.newBuilder()
-				.setReqid(reqid).setAck(result).build();
-
-		responseObserver.onNext(response);
-		responseObserver.onCompleted();
+		CommitRequest req = new CommitRequest(reqid, responseObserver, txrecord);
+		server_state.addNewRequest(reqid, req);
+		server_state.proposalQueue.add(reqid);
 	}
 }
