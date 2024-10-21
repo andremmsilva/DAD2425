@@ -21,6 +21,7 @@ public class Operation {
         try {
             while (req == null) {
                 serverState.newReqCondition.await();
+                req = serverState.requestMap.get(this.acceptedReqId);
             }
         } finally {
             serverState.newReqLock.unlock();
