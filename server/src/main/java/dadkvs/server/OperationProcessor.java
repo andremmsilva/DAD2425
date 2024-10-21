@@ -4,12 +4,12 @@ import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
-public class OperationProcesssor extends Thread {
+public class OperationProcessor extends Thread {
     private DadkvsServerState serverState;
     private final Lock lock = new ReentrantLock();
     private final Condition operationChangedCondition = lock.newCondition();
 
-    public OperationProcesssor(DadkvsServerState serverState) {
+    public OperationProcessor(DadkvsServerState serverState) {
         this.serverState = serverState;
     }
 

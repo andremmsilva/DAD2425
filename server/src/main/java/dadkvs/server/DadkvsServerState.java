@@ -37,7 +37,7 @@ public class DadkvsServerState {
     AtomicInteger nextExecuteIdx = new AtomicInteger(0);
 
     PaxosProcessor paxosProcessor;
-    OperationProcesssor operationProcesssor;
+    OperationProcessor operationProcessor;
 
     public DadkvsServerState(int kv_size, int port, int myself) {
         base_port = port;
@@ -48,9 +48,9 @@ public class DadkvsServerState {
         store = new KeyValueStore(kv_size);
         makeStubs(port);
         paxosProcessor = new PaxosProcessor(this);
-        operationProcesssor = new OperationProcesssor(this);
+        operationProcessor = new OperationProcessor(this);
         paxosProcessor.start();
-        operationProcesssor.start();
+        operationProcessor.start();
     }
 
     public void makeStubs(int port) {

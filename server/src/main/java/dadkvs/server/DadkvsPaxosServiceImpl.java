@@ -101,7 +101,7 @@ public class DadkvsPaxosServiceImpl extends DadkvsPaxosServiceGrpc.DadkvsPaxosSe
         o.setAcceptedTs(timestamp);
         o.setPromisedTs(timestamp);
         server_state.operationLog.set(index, o);
-        server_state.operationProcesssor.signalOperation();
+        server_state.operationProcessor.signalOperation();
         server_state.nextPromiseIdx.set(index + 1);
 
         responseObserver.onNext(learnReply.build());
