@@ -15,6 +15,9 @@ public class CommitRequest extends GenericRequest<DadkvsMain.CommitReply> {
     @Override
     public void process(DadkvsServerState serverState) {
         boolean result = serverState.store.commit(this.record);
+        if(record.getRead1Key() == 0) {
+            serverState.i_am_leader = false;
+        }
 
         // for debug purposes
         System.out.println("Result is ready for request with reqid " + this.reqId);

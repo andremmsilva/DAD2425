@@ -41,10 +41,11 @@ public class PaxosProcessor extends Thread {
         GenericResponseCollector<DadkvsPaxos.PhaseOneReply> collector = new GenericResponseCollector<>(
                 phaseOneReplies, serverState.n_acceptors);
 
+        // #TODO send to the right acceptors
         for (int i = 0; i < serverState.n_acceptors; i++) {
             CollectorStreamObserver<DadkvsPaxos.PhaseOneReply> responseObserver = new CollectorStreamObserver<>(
                     collector);
-            serverState.async_stubs[i].phaseone(phaseOneReq.build(), responseObserver);
+            serverState.async_stubs[i + serverState.store.read(0).getValue()].phaseone(phaseOneReq.build(), responseObserver);
         }
 
         // Wait for all replies, consider only a majority
@@ -66,10 +67,11 @@ public class PaxosProcessor extends Thread {
         GenericResponseCollector<DadkvsPaxos.PhaseTwoReply> collector = new GenericResponseCollector<>(
                 phaseTwoReplies, serverState.n_acceptors);
 
+        // #TODO send to the right acceptors
         for (int i = 0; i < serverState.n_acceptors; i++) {
             CollectorStreamObserver<DadkvsPaxos.PhaseTwoReply> responseObserver = new CollectorStreamObserver<>(
                     collector);
-            serverState.async_stubs[i].phasetwo(phaseTwoReq.build(), responseObserver);
+            serverState.async_stubs[i + serverState.store.read(0).getValue()].phasetwo(phaseTwoReq.build(), responseObserver);
         }
 
         // Wait for all replies, consider only a majority

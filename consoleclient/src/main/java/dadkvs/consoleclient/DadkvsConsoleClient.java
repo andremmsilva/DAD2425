@@ -89,14 +89,13 @@ public class DadkvsConsoleClient {
 					break;
 				case "leader":
 					System.out.println("leader " + parameter1 + " " + parameter2);
+					replica = Integer.parseInt(parameter2);
 					if ((parameter1.equals("on") || parameter1.equals("off")) && (parameter2 != null)) {
-						if (parameter1.equals("on"))
+						if (parameter1.equals("on") && (configuration == replica || configuration + 1 == replica || configuration + 2 == replica))
 							isleader = true;
 						else
 							isleader = false;
-
 						try {
-							replica = Integer.parseInt(parameter2);
 							System.out.println("setting leader " + isleader + " replica " + replica);
 
 							DadkvsConsole.SetLeaderRequest.Builder setleader_request = DadkvsConsole.SetLeaderRequest
