@@ -1,5 +1,6 @@
 package dadkvs.server;
 
+import java.util.Set;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.*;
 import java.util.concurrent.locks.Condition;
@@ -17,6 +18,9 @@ public class DadkvsServerState {
     final String host = "localhost";
 
     boolean i_am_leader;
+    Lock leaderLock = new ReentrantLock();
+    Condition leaderCond = leaderLock.newCondition();
+
     int debug_mode;
     int base_port;
     int my_id;
@@ -29,9 +33,14 @@ public class DadkvsServerState {
     OperationLog operationLog = new OperationLog(1000);
     BlockingQueue<Integer> proposalQueue = new LinkedBlockingQueue<>();
     ConcurrentHashMap<Integer, GenericRequest<?>> requestMap = new ConcurrentHashMap<>();
+    Set<Integer> learnedReqIds = ConcurrentHashMap.newKeySet();
 
     Lock newReqLock = new ReentrantLock();
     Condition newReqCondition = newReqLock.newCondition();
+
+    Lock reconfigLock = new ReentrantLock();
+    Condition reconfigCond = reconfigLock.newCondition();
+    boolean isReconfigPending = false;
 
     AtomicInteger nextPromiseIdx = new AtomicInteger(0);
     AtomicInteger nextExecuteIdx = new AtomicInteger(0);
@@ -51,6 +60,24 @@ public class DadkvsServerState {
         operationProcessor = new OperationProcessor(this);
         paxosProcessor.start();
         operationProcessor.start();
+    }
+
+    private void terminateComms() {
+        for (int i = 0; i < n_servers; i++) {
+            channels[i].shutdownNow();
+        }
+    }
+
+    public void crashServer() {
+        System.out.println("Crashing the server...");
+        this.terminateComms();
+        paxosProcessor.interrupt();
+        operationProcessor.interrupt();
+        System.exit(1);
+    }
+
+    public boolean isInConfiguration(int configVal) {
+        return this.my_id >= configVal && this.my_id < configVal + 3;
     }
 
     public void makeStubs(int port) {

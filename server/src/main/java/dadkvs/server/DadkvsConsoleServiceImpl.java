@@ -21,12 +21,16 @@ public class DadkvsConsoleServiceImpl extends DadkvsConsoleServiceGrpc.DadkvsCon
 		System.out.println(request);
 
 		boolean response_value = true;
-		this.server_state.i_am_leader = request.getIsleader();
+		try {
+			this.server_state.leaderLock.lock();
+			this.server_state.i_am_leader = request.getIsleader();
+			this.server_state.leaderCond.signal();
+		} finally {
+			this.server_state.leaderLock.unlock();
+		}
 
 		// for debug purposes
 		System.out.println("I am the leader = " + this.server_state.i_am_leader);
-
-		// this.server_state.main_loop.wakeup();
 
 		DadkvsConsole.SetLeaderReply response = DadkvsConsole.SetLeaderReply.newBuilder()
 				.setIsleaderack(response_value).build();
@@ -43,8 +47,17 @@ public class DadkvsConsoleServiceImpl extends DadkvsConsoleServiceGrpc.DadkvsCon
 
 		boolean response_value = true;
 
-		this.server_state.debug_mode = request.getMode();
-		// this.server_state.main_loop.wakeup();
+		// If it's a crash debugmode
+		if (request.getMode() == 1) {
+			server_state.crashServer();
+		} else if (request.getMode() == 3 ||
+		// On an unfreeze or a slow-mode-off it will just go to normal (0)
+				request.getMode() == 5 ||
+				request.getMode() == 7) {
+			this.server_state.debug_mode = 0;
+		} else {
+			this.server_state.debug_mode = request.getMode();
+		}
 
 		// for debug purposes
 		System.out.println("Setting debug mode to = " + this.server_state.debug_mode);

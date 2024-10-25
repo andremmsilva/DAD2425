@@ -101,11 +101,31 @@ public class DadkvsPaxosServiceImpl extends DadkvsPaxosServiceGrpc.DadkvsPaxosSe
         o.setAcceptedTs(timestamp);
         o.setPromisedTs(timestamp);
         server_state.operationLog.set(index, o);
+        server_state.learnedReqIds.add(value);
         server_state.operationProcessor.signalOperation();
         server_state.nextPromiseIdx.set(index + 1);
 
         responseObserver.onNext(learnReply.build());
         responseObserver.onCompleted();
+
+        // Check if a reconfiguration has been learned after replying
+        // If so, we stop new paxos instances from starting
+        GenericRequest<?> req = server_state.requestMap.get(value);
+        if (req == null) {
+            return;
+        }
+        if (req instanceof CommitRequest) {
+            int key = ((CommitRequest) req).record.getPrepareKey();
+            if (key != 0) {
+                return;
+            }
+            try {
+                server_state.reconfigLock.lock();
+                server_state.isReconfigPending = true;
+            } finally {
+                server_state.reconfigLock.unlock();
+            }
+        }
     }
 
 }

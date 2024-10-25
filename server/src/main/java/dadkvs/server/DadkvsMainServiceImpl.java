@@ -5,6 +5,7 @@ import dadkvs.DadkvsMain;
 import dadkvs.DadkvsMainServiceGrpc;
 
 import io.grpc.stub.StreamObserver;
+import java.util.Random;
 
 public class DadkvsMainServiceImpl extends DadkvsMainServiceGrpc.DadkvsMainServiceImplBase {
 
@@ -24,6 +25,22 @@ public class DadkvsMainServiceImpl extends DadkvsMainServiceGrpc.DadkvsMainServi
 		int reqid = request.getReqid();
 		int key = request.getKey();
 		VersionedValue vv = this.server_state.store.read(key);
+
+		if (this.server_state.debug_mode == 2) {
+			System.out.println("Server is frozen, ignoring response.");
+			return;
+
+		} else if (this.server_state.debug_mode == 4) {
+			Random random = new Random();
+			// 100 + [0, 900] -> Range: [100, 1000] ms
+			int delay = 100 + random.nextInt(901);
+			System.out.println("Slow-mode on, delaying: " + delay + " ms");
+			try {
+				Thread.sleep(delay);
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+			}
+		}
 
 		DadkvsMain.ReadReply response = DadkvsMain.ReadReply.newBuilder()
 				.setReqid(reqid).setValue(vv.getValue()).setTimestamp(vv.getVersion()).build();
@@ -52,6 +69,23 @@ public class DadkvsMainServiceImpl extends DadkvsMainServiceGrpc.DadkvsMainServi
 		this.timestamp++;
 		TransactionRecord txrecord = new TransactionRecord(key1, version1, key2, version2, writekey, writeval,
 				this.timestamp);
+
+		if (this.server_state.debug_mode == 2) {
+			System.out.println("Server is frozen, ignoring response.");
+			return;
+
+			// Slow mode one case
+		} else if (this.server_state.debug_mode == 4) {
+			Random random = new Random();
+			// 100 + [0, 900] -> Range: [100, 1000] ms
+			int delay = 100 + random.nextInt(901);
+			System.out.println("Slow-mode on, delaying: " + delay + " ms");
+			try {
+				Thread.sleep(delay);
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+			}
+		}
 
 		CommitRequest req = new CommitRequest(reqid, responseObserver, txrecord);
 		server_state.addNewRequest(reqid, req);
